@@ -1,0 +1,451 @@
+// ====== ENUMS / REF TABLES ======
+
+Table ROL {
+  ID_ROLE varchar(15) [pk]
+}
+
+Table STATUS_WAREHOUSE {
+  ID_STATUS varchar(20) [pk]
+}
+
+Table ADDRESS_NODE_TYPE {
+  ID_ANT varchar(38) [pk]
+  NODE_TYPE varchar(50)
+}
+
+Table PRODUCT_CATEGORY {
+  ID_CATEGORY int [pk, increment]
+  NAME varchar(35)
+}
+
+// ====== MAIN ENTITIES ======
+
+Table APP_PROFILE {
+  ID_USER2 varchar(38) [pk]
+  NAME varchar(35)
+  LASTNAME varchar(35)
+  LASTNAME2 varchar(35)
+  DESCRIPTION text
+  BIRTH_DATE date
+  CREATED_AT date
+}
+
+Table APP_USER {
+  ID_USER varchar(38) [pk]
+  ID_USER2 varchar(38)
+  PASSWORD varchar(72)
+}
+
+Table CUSTOMER {
+  ID_USER varchar(38)
+  ID_CUSTOMER varchar(38)
+  indexes {
+    (ID_USER,ID_CUSTOMER) [pk]
+  }
+}
+
+Table PRODUCT_CUSTOMER_REVIEW {
+  ID_PRODUCT  varchar(38) [not null]
+  ID_USER     varchar(38) [not null]
+  ID_CUSTOMER varchar(38) [not null]
+
+  RATING smallint [not null]        // ej: 1–5
+  REVIEW_TEXT text
+  CREATED_AT date [not null]
+  UPDATE_AT date 
+
+  indexes {
+    (ID_PRODUCT, ID_USER, ID_CUSTOMER) [pk]
+  }
+}
+
+Table EMPLOYEE {
+  ID_USER varchar(38)
+  ID_EMPLOYEE varchar(38)
+  MANAGER_ID_USER varchar(38)
+  MANAGER_ID_EMPLOYEE varchar(38)
+  JOB_TITLE char(80)
+  
+  indexes {
+    (ID_USER, ID_EMPLOYEE) [pk]
+  }
+}
+
+Table WAREHOUSE {
+  ID_WAREHOUSE varchar(38) [pk]
+  ID_STATUS varchar(20)
+  ID_LOCATION_WAREHOUSE varchar(38)
+  CODE varchar(7)
+}
+
+Table WAREHOUSE_TRANSFER {
+  ID_WAREHOUSE_TRANSFER varchar(38) [pk]
+
+  ID_WAREHOUSE_ORIGIN      varchar(38) [not null]
+  ID_WAREHOUSE_DESTINATION varchar(38) [not null]
+
+  STATUS varchar(20)       // Pending, InTransit, Completed, Cancelled
+  CREATED_AT timestamp [not null]
+  COMPLETED_AT timestamp
+}
+
+Table WAREHOUSE_TRANSFER_DETAIL {
+  ID_WAREHOUSE_TRANSFER varchar(38) [not null]
+  ID_PRODUCT            varchar(38) [not null]
+
+  QUANTITY smallint [not null]
+
+  indexes {
+    (ID_WAREHOUSE_TRANSFER, ID_PRODUCT) [pk]
+  }
+}
+
+
+
+Table LOCATION_WAREHOUSE {
+  ID_LOCATION_WAREHOUSE varchar(38) [pk]
+  LAT numeric(10,20)
+  LONG numeric(10,20)
+  DESC text
+  LOCATE text
+}
+
+Table INVENTORY {
+  ID_INVENTORY varchar(38) [pk]
+  ID_WAREHOUSE varchar(38)
+}
+
+Table BRAND {
+  ID_BRAND varchar(38) [pk]
+  NAME varchar(30)
+  DESCRIPTION TEXT
+}
+
+Table PRODUCT_STATE {
+  ID_PRODUCT_STATE varchar(10) [pk]
+}
+
+Table PRODUCT {
+  ID_PRODUCT varchar(38) [pk]
+  ID_BRAND varchar(38) 
+  ID_PRODUCT_STATE varchar(10)
+  META_TITLE varchar(100)
+  META_DESCRIPTION text
+  DESCRIPTION text
+}
+
+Table PRODUCT_IMAGES {
+  ID_PRODUCT_IMAGES varchar(38) [pk]
+  ID_PRODUCT varchar(38)
+  URL varchar(255)
+
+}
+
+Table INVENTORY_STOCK {
+  ID_PRODUCT varchar(38)
+  ID_INVENTORY varchar(38)
+  QUANTITY smallint
+  MIN_STOCK_ALERT smallint
+  MAX_STOCK smallint
+  
+  
+  indexes {
+    (ID_PRODUCT, ID_INVENTORY) [pk]
+  }
+}
+
+Table SALE_ORDER {
+  ID_SALE_ORDER varchar(38) [pk]
+  SELLER_ID_USER varchar(38)
+  SELLER_ID_EMPLOYEE varchar(38)
+  CUSTOMER_ID_USER varchar(38)
+  ID_CUSTOMER varchar(38)
+  ORDER_ADDRESS text
+  TOTAL_PRICE number(12,3)
+  CREATED_AT date
+}
+
+Table SHIPMENT {
+  ID_SHIPMENT        varchar(38) [pk]
+  ID_SALE_ORDER      varchar(38) 
+  ID_CARRIER            varchar(38) [not null]
+  TRACKING_NUMBER    varchar(50)
+  SHIPPED_AT         timestamp
+  DELIVERED_AT       timestamp
+}
+
+Table CARRIER {
+  ID_CARRIER varchar(38) [pk]
+  NAME varchar(50) [not null]
+
+  ID_CARRIER_TYPE varchar(38) [not null, ref: > CARRIER_TYPE.ID_CARRIER_TYPE]
+  ID_CARRIER_STATUS varchar(38) [not null, ref: > CARRIER_STATUS.ID_CARRIER_STATUS]
+}
+
+Table CARRIER_STATUS {
+  ID_CARRIER_STATUS varchar(38) [pk]
+  NAME varchar(20) [not null]   // Active, Inactive, Suspended
+  DESCRIPTION varchar(100)
+}
+
+Table CARRIER_TYPE {
+  ID_CARRIER_TYPE varchar(38) [pk]
+  NAME varchar(20) [not null]   // Internal, External, ThirdParty
+  DESCRIPTION varchar(100)
+}
+
+Table VEHICLE {
+  ID_VEHICLE varchar(38) [pk]
+  ID_CARRIER varchar(38) [not null, ref: > CARRIER.ID_CARRIER]
+
+  PLATE varchar(10) [unique, not null]
+  VEHICLE_TYPE varchar(20)   // Truck, Van, Bike
+  CAPACITY numeric(10,2)
+  STATUS varchar(15)         // Available, Maintenance
+}
+
+Table TRANSPORT_ROUTE {
+  ID_ROUTE varchar(38) [pk]
+
+  ID_CARRIER varchar(38) [not null, ref: > CARRIER.ID_CARRIER]
+  ID_VEHICLE varchar(38) [not null, ref: > VEHICLE.ID_VEHICLE]
+
+  ORIGIN_ADDRESS_ID varchar(38)   // FK lógica (snapshot)
+  DESTINATION_ADDRESS_ID varchar(38)
+
+  PARENT_ROUTE_ID varchar(38) [ref: > TRANSPORT_ROUTE.ID_ROUTE]
+  ROUTE_ORDER smallint            // orden del tramo
+
+  DISTANCE_KM numeric(8,2)
+  ESTIMATED_TIME_MIN integer
+
+  STATUS varchar(15)              // Planned, InProgress, Completed
+}
+
+
+Table SALE_ORDER_DETAILS {
+  ID_SALE_ORDER      varchar(38)  [not null]
+  ID_PRODUCT         varchar(38)  [not null]
+  ID_SALE_ORDER_STATUS_HISTORY varchar(38) [not null]
+  QUANTITY           smallint     [not null]
+  UNIT_PRICE         numeric(9,3) [not null]
+  TAX                numeric(9,3)
+  TOTAL_ITEM_PRICE        numeric(12,3) [not null]
+
+  indexes {
+    (ID_SALE_ORDER, ID_PRODUCT) [pk]
+  }
+}
+
+Table PAYMENT_TYPE{
+  ID_PAYMENT_TYPE varchar(38) [not null]
+  NAME_PAYMENT varchar(20) [not null]
+}
+
+
+Table PAYMENT_ORDER {
+  ID_SALE_ORDER   varchar(38) [not null]
+  ID_PAYMENT_TYPE varchar(38) [not null]
+
+  AMOUNT_PAID     numeric(12,3) [not null]
+  TAX             numeric(9,3)
+  EXTERNAL_TRANSACTION_ID varchar(255)
+  RESPONSE_CODE varchar(30) // codigo
+  PAYMENT_GATEWAY varchar(255) // Nombre de la pasarela
+  indexes {
+    (ID_SALE_ORDER, ID_PAYMENT_TYPE) [pk]
+  }
+}
+
+Table SALE_ORDER_STATUS_HISTORY {
+  ID_SALE_ORDER_STATUS_HISTORY varchar(38) [pk]
+  ID_SALE_ORDER_STATUS varchar(15) [not null]
+  DATE timestamp
+}
+
+Table SALE_ORDER_STATUS {
+  ID_STATUS varchar(15)
+}
+
+Table SALE_PRICE_HISTORY {
+  ID_SALE_PRICE_HISTORY varchar(38) [pk]
+  ID_PRODUCT varchar(38)
+  DATE date
+  PRICE numeric(5,5)
+}
+
+Table COUPON_TYPES {
+  ID_TYPE varchar(38) [pk]
+  NAME varchar(50)      // Ej: Percentage, FixedAmount, FreeShipping
+  DESCRIPTION varchar(200)
+}
+
+Table COUPONS {
+  ID_COUPONS varchar(38) [pk]
+  CODE varchar(20) [unique]   // Código del cupón
+  DATE_START date             // Fecha inicio
+  DATE_FINISH date            // Fecha fin
+  MIN_SALE decimal(10,2)      // Monto mínimo de compra
+  DISCOUNT_VALUE decimal(6,2) // Valor del descuento
+  ID_TYPE varchar(38) [ref: > COUPON_TYPES.ID_TYPE] // Relación con tipo
+  STATUS varchar(15)          // Active, Expired, Disabled
+}
+
+Table ORDER_COUPONS {
+  ID_SALE_ORDER varchar(38) [not null]
+  ID_COUPONS    varchar(38) [not null]
+
+  DISCOUNT_APPLIED decimal(10,2) [not null] // monto real descontado
+  APPLIED_AT date [not null]
+
+  indexes {
+    (ID_SALE_ORDER, ID_COUPONS) [pk]
+  }
+}
+
+
+Table ADDRESS_NODE_NAMES {
+  ID_ANN varchar(38) [pk]
+  ID_ANT varchar(38)
+  NAME varchar(35)
+}
+
+Table ADDRESS_NODE {
+  ID_NODE varchar(38) [pk]
+  ID_ANN varchar(38)
+  ID_USER2 varchar(38)
+  APP_ID_USER2 varchar(38)
+  ADD_ID_NODE varchar(38)
+  NUMB varchar(50)
+  ORDER_INDEX char(10)
+}
+
+Table BELONGS_TO {
+  ID_CATEGORY int
+  ID_PRODUCT char(38)
+  
+  indexes {
+    (ID_CATEGORY, ID_PRODUCT) [pk]
+  }
+}
+
+Table USER_ROL {
+  ID_USER varchar(38)
+  ID_ROLE varchar(15)
+  
+  indexes {
+    (ID_USER, ID_ROLE) [pk]
+  }
+}
+
+// ==== WISH LIST ===0
+
+Table WISHLIST {
+  ID_WISHLIST varchar(38) [pk]
+
+  ID_USER     varchar(38) [not null]
+  ID_CUSTOMER varchar(38) [not null]
+
+  NAME varchar(50)        // opcional: “Favoritos”, “Navidad”
+  CREATED_AT date [not null]
+}
+
+Table WISHLIST_PRODUCT {
+  ID_WISHLIST varchar(38) [not null]
+  ID_PRODUCT  varchar(38) [not null]
+
+  ADDED_AT date [not null]
+
+  indexes {
+    (ID_WISHLIST, ID_PRODUCT) [pk]
+  }
+}
+
+
+// ====== RELATIONSHIPS ======
+
+Ref: APP_USER.ID_USER2 > APP_PROFILE.ID_USER2
+Ref: EMPLOYEE.ID_USER > APP_USER.ID_USER
+
+// DBML no soporta Ref con múltiples columnas. Relación omitida para compatibilidad.
+
+Ref: WAREHOUSE.ID_STATUS > STATUS_WAREHOUSE.ID_STATUS
+Ref: WAREHOUSE.ID_LOCATION_WAREHOUSE > LOCATION_WAREHOUSE.ID_LOCATION_WAREHOUSE
+
+Ref: INVENTORY.ID_WAREHOUSE > WAREHOUSE.ID_WAREHOUSE
+
+Ref: INVENTORY_STOCK.ID_INVENTORY > INVENTORY.ID_INVENTORY
+Ref: INVENTORY_STOCK.ID_PRODUCT > PRODUCT.ID_PRODUCT
+
+Ref: SALE_ORDER.ID_CUSTOMER > CUSTOMER.ID_CUSTOMER
+Ref: SALE_ORDER.CUSTOMER_ID_USER > CUSTOMER.ID_USER
+
+Ref: SALE_ORDER.SELLER_ID_USER > EMPLOYEE.ID_USER
+Ref: SALE_ORDER.SELLER_ID_EMPLOYEE > EMPLOYEE.ID_EMPLOYEE
+
+// Omitida por incompatibilidad con DBML.
+
+Ref: SALE_ORDER_DETAILS.ID_SALE_ORDER > SALE_ORDER.ID_SALE_ORDER
+Ref: SALE_ORDER_DETAILS.ID_PRODUCT > PRODUCT.ID_PRODUCT
+
+Ref: SALE_PRICE_HISTORY.ID_PRODUCT > PRODUCT.ID_PRODUCT
+
+Ref: ADDRESS_NODE.ID_ANN > ADDRESS_NODE_NAMES.ID_ANN
+Ref: ADDRESS_NODE.ID_USER2 > APP_PROFILE.ID_USER2
+Ref: ADDRESS_NODE.APP_ID_USER2 > APP_PROFILE.ID_USER2
+Ref: ADDRESS_NODE.ADD_ID_NODE > ADDRESS_NODE.ID_NODE
+
+Ref: ADDRESS_NODE_NAMES.ID_ANT > ADDRESS_NODE_TYPE.ID_ANT
+
+Ref: BELONGS_TO.ID_CATEGORY > PRODUCT_CATEGORY.ID_CATEGORY
+Ref: BELONGS_TO.ID_PRODUCT > PRODUCT.ID_PRODUCT
+
+Ref: USER_ROL.ID_USER > APP_USER.ID_USER
+Ref: USER_ROL.ID_ROLE > ROL.ID_ROLE
+
+Ref: "ADDRESS_NODE"."ID_NODE" < "ADDRESS_NODE"."ID_USER2"
+
+Ref: "APP_USER"."ID_USER" < "CUSTOMER"."ID_USER"
+
+Ref: "BRAND"."ID_BRAND" < "PRODUCT"."ID_BRAND"
+
+Ref: "PRODUCT_STATE"."ID_PRODUCT_STATE" < "PRODUCT"."ID_PRODUCT_STATE"
+
+Ref: "PRODUCT"."ID_PRODUCT" < "PRODUCT_IMAGES"."ID_PRODUCT"
+
+Ref: "SALE_ORDER"."ID_SALE_ORDER" < "SHIPMENT"."ID_SALE_ORDER"
+
+Ref: "CARRIER"."ID_CARRIER" < "SHIPMENT"."ID_CARRIER"
+
+Ref: "SALE_ORDER_STATUS_HISTORY"."ID_SALE_ORDER_STATUS_HISTORY" < "SALE_ORDER_DETAILS"."ID_SALE_ORDER_STATUS_HISTORY"
+
+Ref: "SALE_ORDER_STATUS"."ID_STATUS" < "SALE_ORDER_STATUS_HISTORY"."ID_SALE_ORDER_STATUS"
+
+Ref: "PAYMENT_TYPE"."ID_PAYMENT_TYPE" < "PAYMENT_ORDER"."ID_PAYMENT_TYPE"
+
+
+Ref: "SALE_ORDER"."ID_SALE_ORDER" < "PAYMENT_ORDER"."ID_SALE_ORDER"
+
+Ref: "SALE_ORDER"."ID_SALE_ORDER" < "ORDER_COUPONS"."ID_SALE_ORDER"
+
+Ref: "COUPONS"."ID_COUPONS" < "ORDER_COUPONS"."ID_COUPONS"
+
+Ref: "CUSTOMER"."ID_USER" < "PRODUCT_CUSTOMER_REVIEW"."ID_USER"
+
+Ref: "CUSTOMER"."ID_CUSTOMER" < "PRODUCT_CUSTOMER_REVIEW"."ID_CUSTOMER"
+
+Ref: "PRODUCT"."ID_PRODUCT" < "PRODUCT_CUSTOMER_REVIEW"."ID_PRODUCT"
+
+Ref: "WISHLIST"."ID_WISHLIST" < "WISHLIST_PRODUCT"."ID_WISHLIST"
+
+Ref: "CUSTOMER"."ID_USER" < "WISHLIST"."ID_USER"
+
+Ref: "CUSTOMER"."ID_CUSTOMER" < "WISHLIST"."ID_CUSTOMER"
+
+Ref: "PRODUCT"."ID_PRODUCT" < "WISHLIST_PRODUCT"."ID_PRODUCT"
+
+Ref: WAREHOUSE_TRANSFER.ID_WAREHOUSE_ORIGIN > WAREHOUSE.ID_WAREHOUSE
+Ref: WAREHOUSE_TRANSFER.ID_WAREHOUSE_DESTINATION > WAREHOUSE.ID_WAREHOUSE
+
+Ref: WAREHOUSE_TRANSFER_DETAIL.ID_WAREHOUSE_TRANSFER > WAREHOUSE_TRANSFER.ID_WAREHOUSE_TRANSFER
+Ref: WAREHOUSE_TRANSFER_DETAIL.ID_PRODUCT > PRODUCT.ID_PRODUCT
